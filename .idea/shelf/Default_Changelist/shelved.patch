@@ -1,0 +1,78 @@
+Index: src/main/java/com/hibernate/Hibernate/controller/AssignmentController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/com/hibernate/Hibernate/controller/AssignmentController.java	(date 1575841572548)
++++ src/main/java/com/hibernate/Hibernate/controller/AssignmentController.java	(date 1575841572548)
+@@ -0,0 +1,70 @@
++package com.hibernate.Hibernate.controller;
++
++import com.hibernate.Hibernate.exeption.notFoundException;
++import com.hibernate.Hibernate.model.Assignments;
++import com.hibernate.Hibernate.repository.AssignmentRepository;
++import com.hibernate.Hibernate.repository.StudentRepository;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.web.bind.annotation.*;
++
++import javax.validation.Valid;
++import java.util.List;
++
++@RestController
++@RequestMapping("api/v1")
++public class AssignmentController {
++
++    @Autowired
++    private AssignmentRepository assignmentRepository;
++
++    @Autowired
++    private StudentRepository studentRepository;
++
++    @GetMapping("/students/{studentId}/assignments")
++    public List<Assignments> getContactByStudentId(@PathVariable Long studentId){
++        if (!studentRepository.existsById(studentId)){
++            throw new notFoundException("Student not found!");
++        }
++
++        return assignmentRepository.findByStudentId(studentId);
++    }
++
++    @PostMapping("/students/{studentId}/assignments")
++    public Assignments addAssignment(@PathVariable Long studentId, @Valid @RequestBody Assignments assignment){
++        return studentRepository.findById(studentId)
++                .map(student -> {
++                    assignment.setStudent(student);
++                    return assignmentRepository.save(assignment);
++                }).orElseThrow(() -> new notFoundException("Student not found!"));
++    }
++
++    @PutMapping("/students/{studentId}/assignments/{assignmentId}")
++    public Assignments updateAssignment(@PathVariable Long studentId,
++                                        @PathVariable Long assignmentId,
++                                        @Valid @RequestBody Assignments assignmentUpdate){
++
++        if (!studentRepository.existsById(studentId)){
++            throw new notFoundException("Student not found!");
++        }
++
++        return assignmentRepository.findById(assignmentId)
++                .map(assignment -> {
++                    assignment.setName(assignmentUpdate.getName());
++                    assignment.setGrade(assignmentUpdate.getGrade());
++                    return assignmentRepository.save(assignment);
++                }).orElseThrow(()-> new notFoundException("Assignment not found"));
++    }
++
++    @DeleteMapping("/students/{studentId}/assignments/{assignmentId}")
++    public String deleteAssignment(@PathVariable Long studentId, @PathVariable Long assignmentId){
++        if (!studentRepository.existsById(studentId)){
++            throw new notFoundException("Student Not found!");
++        }
++
++        return assignmentRepository.findById(assignmentId)
++                .map(assignment -> {
++                    assignmentRepository.delete(assignment);
++                    return "Delete Successfully!";
++                }).orElseThrow(() -> new notFoundException("Student not found!"));
++    }
++}
